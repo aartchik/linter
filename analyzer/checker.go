@@ -6,6 +6,7 @@ import (
 	"go/token"
 	"strconv"
 	"golang.org/x/tools/go/analysis"
+	"unicode"
 )
 
 type targetLog string
@@ -16,28 +17,35 @@ const zapLog = targetLog("log/slog.Logger")
 
 
 
-func isTargetLogCall(pass *analysis.Pass, call *ast.CallExpr) (bool) {
+func TargetLogCall(pass *analysis.Pass, call *ast.CallExpr) targetLog {
 	sel, ok := call.Fun.(*ast.SelectorExpr)
 	if !ok {
-		return false
+		return ""
 	}
 	_, ok = sel.X.(*ast.Ident)
 	if !ok {
-		return false
+		return ""
 	}
 
 	tv, ok := pass.TypesInfo.Types[sel.X]
 	if !ok || tv.Type == nil {
-		return false
+		return ""
 	}
 
-	typeStr := tv.Type.String()
-	if typeStr == string(slogLog) || typeStr == string(logLog) {
-		fmt.Printf("type: %s", typeStr)
-		return true
+	typeStr := targetLog(tv.Type.String())
+	switch typeStr {
+
+	case slogLog:
+		return slogLog
+	
+	case logLog:
+		return logLog
+	
+	case zapLog:
+		return zapLog
 	}
-	//pass.Reportf(n.Pos(), fmt.Sprintf("func called: %s", sel.Sel.Name))
-	return true
+	return ""
+	
 }
 
 func collectStrings(expr ast.Expr) []string {
@@ -71,6 +79,16 @@ func collectStrings(expr ast.Expr) []string {
 	return result
 }
 
+func checkArgs(args []string) bool {
+	for _, item := range args {
+		r := []rune(item)
+		if len(r) > 0 && unicode.IsUpper(r[0]) {
+			return false
+		}
+	}
+	return true
+}
+
 
 func run(pass *analysis.Pass) (any, error) {
 
@@ -80,12 +98,15 @@ func run(pass *analysis.Pass) (any, error) {
 			if !ok {
 				return true
 			} 
-			ok = isTargetLogCall(pass, call)
+			if target := TargetLogCall(pass, call); target == "" {
+				return true
+			}	 
+			args := collectStrings(call.Args[0])
+			ok = checkArgs(args)
 			if !ok {
-				return false
+				pass.Reportf(n.Pos(), fmt.Sprintf("func called: %s", call.Fun.(*ast.SelectorExpr).Sel.Name))
 			}
 			return true
-			
 		})
 	}
 	return nil, nil
