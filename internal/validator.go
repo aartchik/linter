@@ -5,7 +5,7 @@ import (
 	"unicode"
 )
 
-var sensitiveWords = map[string]struct{}{
+var sensitiveWordsInKey = map[string]struct{}{
 	"password": {},
 	"passwd": {},
 	"pwd": {},
@@ -18,11 +18,29 @@ var sensitiveWords = map[string]struct{}{
 	"authorization": {},
 }
 
+var sensitiveWordsInMSG = map[string]struct{}{
+	"password:": {},
+	"password=": {},
+	"passwd:": {},
+	"passwd=": {},
+	"pwd:": {},
+	"pwd=": {},
+	"token:": {},
+	"token=": {},
+	"secret:": {},
+	"secret=": {},
+	"apikey:": {},
+	"apikey=": {},
+	"api_key:": {},
+	"api_key=": {},
+	"access_token": {},
+}
+
 func normalizeWords(s string) []string {
 	var b strings.Builder
 
 	for _, r := range s {
-		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) || r == '=' || r == ':' {
 			b.WriteRune(unicode.ToLower(r))
 		} else {
 			b.WriteRune(' ')
@@ -32,17 +50,26 @@ func normalizeWords(s string) []string {
 	return strings.Fields(b.String())
 }
 
-func notContainsSensitiveWord(s string) bool {
+func isSensitiveKey(s string) bool {
+	if _, ok := sensitiveWordsInKey[s]; ok {
+			return true
+		}
+	return false
+}
+
+func notContainsSensitiveWordInMsg(s string) bool {
 	words := normalizeWords(s)
 
 	for _, w := range words {
-		if _, ok := sensitiveWords[w]; ok {
+		if _, ok := sensitiveWordsInMSG[w]; ok {
 			return false
 		}
 	}
 
 	return true
 }
+
+
 
 
 func isEnglish(s string) bool {

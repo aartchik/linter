@@ -4,8 +4,21 @@ import (
 	"go/ast"
 	"go/token"
 	"strconv"
-
 )
+
+func collectIdents(expr ast.Expr) []*ast.Ident {
+	var result []*ast.Ident
+
+	ast.Inspect(expr, func(n ast.Node) bool {
+		ident, ok := n.(*ast.Ident)
+		if !ok {
+			return true
+		}
+		result = append(result, ident)
+		return true
+	})
+	return result
+}
 
 func collectStrings(expr ast.Expr) []string {
 	var result []string
@@ -33,5 +46,6 @@ func collectStrings(expr ast.Expr) []string {
 	case *ast.ParenExpr:
 		result = append(result, collectStrings(v.X)...)
 	}
+
 	return result
 }

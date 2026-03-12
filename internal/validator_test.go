@@ -154,3 +154,46 @@ func TestLowerCase(t *testing.T) {
 		})
 	}
 }
+
+func TestContainsSesnitiveWord(t *testing.T) {
+	tests := []struct {
+        name     string
+        input string
+        wantOutput bool
+    }{
+		{
+			name: "empty string",
+			input: "",
+			wantOutput: true,
+		},
+		{
+			name: "correct string",
+			input: "correct string",
+			wantOutput: true,
+		},
+		{
+			name: "uncorrect string",
+			input: "password=",
+			wantOutput: false,
+		},
+		{
+			name: "uncorrect string",
+			input: "token:",
+			wantOutput: false,
+		},
+		{
+			name: "uncorrect string",
+			input: "apikey=",
+			wantOutput: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name , func(t *testing.T) {
+			res := notContainsSensitiveWordInMsg(tt.input)
+			if res != tt.wantOutput {
+				t.Errorf("got: %v; want: %v", res, tt.wantOutput)
+			}
+		})
+	}
+}

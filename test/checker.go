@@ -1,13 +1,11 @@
-package test
+package main
 
 import (
-	"log/slog"
+	"go.uber.org/zap"
 
 )
 
 
 func main() {
-
-	slog.Info("Upper first letter") // want "log message should start with lowercase"
-
+	zap.L().Info("message")
 }
