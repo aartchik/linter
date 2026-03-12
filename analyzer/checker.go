@@ -6,35 +6,68 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
-
+	"go/types"
 	"golang.org/x/tools/go/analysis"
 )
+
+
+type LogCall struct {
+    Package targetLog 
+    Method    string 
+    Call      *ast.CallExpr
+    MsgIndex  int
+}
 
 type targetLog string
 
 const slogLog = targetLog("*log/slog.Logger")
 const zapLog = targetLog("*go.uber.org/zap.Logger")
 
-func targetLogCall(pass *analysis.Pass, call *ast.CallExpr) (targetLog, string) {
+func targetLogCall(pass *analysis.Pass, call *ast.CallExpr) LogCall {
 	sel, ok := call.Fun.(*ast.SelectorExpr)
 	if !ok {
-		return "", ""
+		return LogCall{}
 	}
+	if !isSupportedMethodSlog(sel.Sel.Name) {
+		return LogCall{}
+	}
+
+	if ident, ok := sel.X.(*ast.Ident); ok {
+		if obj := pass.TypesInfo.Uses[ident]; obj != nil {
+			if pkgName, ok := obj.(*types.PkgName); ok && pkgName.Imported().Path() == "log/slog" {
+				log := LogCall{
+					Package: slogLog,
+					Method:  sel.Sel.Name,
+					Call:    call,
+					MsgIndex: 0,
+				}
+				if strings.HasSuffix(sel.Sel.Name, "Context") {
+					log.MsgIndex = 1
+				}
+				return log
+			}
+		}
+	}
+
 
 	tv, ok := pass.TypesInfo.Types[sel.X]
 	if !ok || tv.Type == nil {
-		return "", ""
+		return LogCall{}
 	}
 
 	typeStr := targetLog(tv.Type.String())
 	switch typeStr {
 	case slogLog:
-		return slogLog, sel.Sel.Name
+		log := LogCall{Package: slogLog, Method: sel.Sel.Name, Call: call}
+		if strings.HasSuffix(sel.Sel.Name, "Context") {
+			log.MsgIndex = 1
+		}
+		return log
 	case zapLog:
-		return zapLog, sel.Sel.Name
+		return LogCall{Package: zapLog, Method: sel.Sel.Name, Call: call, MsgIndex: 0}
 	}
 
-	return "", ""
+	return LogCall{Package: "", Method: "", Call: nil, MsgIndex: 0}
 }
 
 func collectStrings(expr ast.Expr) []string {
@@ -77,7 +110,7 @@ func isEnglish(s string) bool {
 
 func hasSpecialSymbols(s string) bool {
 	for _, r := range s {
-		if unicode.IsLetter(r) || unicode.IsDigit(r) || r == ' ' {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) || r == ' ' || r == '_' || r == '-'{
 			continue
 		}
 		return true
@@ -85,9 +118,16 @@ func hasSpecialSymbols(s string) bool {
 	return false
 }
 
+func isSupportedMethodSlog(method string) bool {
+	switch method {
+	case "Debug", "Info", "Warn", "Error", "DebugContext", "InfoContext", "WarnContext", "ErrorContext":
+		return true
+	default:
+		return false
+	}
+}
 
-
-func checkArgs(idx int, arg string) bool {
+func checkLowercase(arg string) bool {
 	arg = strings.TrimSpace(arg)
 	r := []rune(arg)
 
@@ -95,98 +135,76 @@ func checkArgs(idx int, arg string) bool {
 		return true
 	}
 
-
-	if idx == 0 || idx%2 == 1 {
-		if unicode.IsLetter(r[0]) && unicode.IsUpper(r[0]) {
-			return false
-		}
-	}
-	return true
+	return !(unicode.IsLetter(r[0]) && unicode.IsUpper(r[0]))
 }
 
 
-func linterSLOG(pass *analysis.Pass, call *ast.CallExpr) (bool) {
-
-	target, method := targetLogCall(pass, call)
-	if target == "" {
-		return true
-	}
-	startMsg := 0
-	if strings.HasSuffix(method, "Context") {
-		startMsg = 1
+func linterSLOG(pass *analysis.Pass, log *LogCall) {
+	if len(log.Call.Args) <= log.MsgIndex {
+		return
 	}
 
-	if len(call.Args) <= startMsg {
-		return true
-	}
+	msgArg := log.Call.Args[log.MsgIndex]
+	msgParts := collectStrings(msgArg)
 
-	msgParts := collectStrings(call.Args[startMsg])
 	for _, part := range msgParts {
-		if !checkArgs(0, part) {
-			pass.Reportf(call.Args[startMsg].Pos(), "log message should start with lowercase")
-			return true
+		if !checkLowercase(part) {
+			pass.Reportf(msgArg.Pos(), "log message should start with lowercase")
 		}
 		if !isEnglish(part) {
-			pass.Reportf(call.Args[startMsg].Pos(), "log message should contains only english letters")
-			return true
+			pass.Reportf(msgArg.Pos(), "log message should contain only English letters")
 		}
 		if hasSpecialSymbols(part) {
-			pass.Reportf(call.Args[startMsg].Pos(), "log message contains special symbols or emoji")
-			return true
-		} 
+			pass.Reportf(msgArg.Pos(), "log message contains special symbols or emoji")
+		}
 	}
 
-	fieldIdx := 1
-	for i := startMsg + 1; i < len(call.Args); i++ {
-		arg := call.Args[i]
+	for i := log.MsgIndex + 1; i < len(log.Call.Args); i++ {
+		arg := log.Call.Args[i]
 
 		if lit, ok := arg.(*ast.BasicLit); ok && lit.Kind == token.STRING {
-			if (i-(startMsg+1))%2 == 0 {
+			if (i-(log.MsgIndex+1))%2 == 0 {
 				for _, s := range collectStrings(arg) {
-					if !checkArgs(fieldIdx, s) {
+					if !checkLowercase(s) {
 						pass.Reportf(arg.Pos(), "log field key should start with lowercase")
-						return true
 					}
 					if !isEnglish(s) {
-						pass.Reportf(call.Args[startMsg].Pos(), "log message should contains only english letters")
-						return true
+						pass.Reportf(arg.Pos(), "log field key should contain only English letters")
 					}
 					if hasSpecialSymbols(s) {
-						pass.Reportf(call.Args[startMsg].Pos(), "log message contains special symbols or emoji")
-						return true
-					} 
+						pass.Reportf(arg.Pos(), "log field key contains special symbols or emoji")
+					}
 				}
-				fieldIdx += 2
 			}
 			continue
 		}
 
 		if innerCall, ok := arg.(*ast.CallExpr); ok {
-			parts := collectStrings(innerCall)
-			if len(parts) > 0 {
-				key := parts[0]
-				if !checkArgs(fieldIdx, key) {
-					pass.Reportf(arg.Pos(), "log field key should start with lowercase")
-					return true
-				}
-				if !isEnglish(key) {
-					pass.Reportf(call.Args[startMsg].Pos(), "log filed key should contains only english letters")
-					return true
-				}
-				if hasSpecialSymbols(key) {
-					pass.Reportf(call.Args[startMsg].Pos(), "log filed key contains special symbols or emoji")
-					return true
-				} 
-				fieldIdx += 2
+			if len(innerCall.Args) == 0 {
+				continue
+			}
+
+			keyParts := collectStrings(innerCall.Args[0])
+			if len(keyParts) == 0 {
+				continue
+			}
+
+			key := keyParts[0]
+			if !checkLowercase(key) {
+				pass.Reportf(arg.Pos(), "log field key should start with lowercase")
+			}
+			if !isEnglish(key) {
+				pass.Reportf(arg.Pos(), "log field key should contain only English letters")
+			}
+			if hasSpecialSymbols(key) {
+				pass.Reportf(arg.Pos(), "log field key contains special symbols or emoji")
 			}
 		}
 	}
-
-	return true
 }
 
 
-func linterZAP(pass *analysis.Pass, call *ast.CallExpr) (bool) { return true }
+func linterZAP(pass *analysis.Pass, log *LogCall) { }
 
 func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
@@ -195,15 +213,17 @@ func run(pass *analysis.Pass) (any, error) {
 			if !ok {
 				return true
 			}
-			target, _ := targetLogCall(pass, call)
-			switch  target{
+			log := targetLogCall(pass, call)
+			switch  log.Package {
 
 			case "":
 				return true
 			case slogLog:
-				return linterSLOG(pass, call)
+				linterSLOG(pass, &log)
+				return true
 			case zapLog:
-				return linterZAP(pass, call)
+				linterZAP(pass, &log)
+				return true
 			}
 
 			return true
