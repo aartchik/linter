@@ -7,9 +7,9 @@ import (
 
 
 func TestAnalyzerCleanSlog(t *testing.T) {
-	analysistest.Run(t, analysistest.TestData(), Analyzer, "clean")
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "clean_slog")
 }
 
 func TestAnalyzerDirtySlog(t *testing.T) {
-	analysistest.Run(t, analysistest.TestData(), Analyzer, "dirty")
+	analysistest.Run(t, analysistest.TestData(), Analyzer, "dirty_slog")
 }
