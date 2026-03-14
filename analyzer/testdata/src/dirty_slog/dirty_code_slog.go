@@ -1,10 +1,9 @@
 package test
 
 import (
-	"log/slog"
 	"context"
+	"log/slog"
 	"os"
-
 )
 
 
@@ -48,20 +47,31 @@ func main() {
 	logger.Info("message", slog.String("ключ", "value1")) // want "log field key should contain only English letters"
 
 
-	slog.Info("password", "token")
 	password := ""
-	api_key := ""
-	slog.Info("message", "password", password) // want "log message contains potential sensitive word"
-	slog.Info("message", "api_key", api_key) // want "log message contains potential sensitive word"
+	net := ""
+	Password := ""
+	slog.Info("message", slog.String("test", Password))
+	slog.Info("message", "test", password) // want "log field key contains potential sensitive word"
+	slog.Info("message", "test", net) 
 
-	logger.Info("message", slog.String("password", password)) // want "log message contains potential sensitive word"
-
+	logger.Info("message", slog.String("password", net)) // want "log field key contains potential sensitive word"
+	logger.Info("message", slog.String("test", password)) // want "log field key contains potential sensitive word"
+	logger.Info("message", slog.String("password", net)) // want "log field key contains potential sensitive word"
+	logger.Info("message", "password", password) // want "log field key contains potential sensitive word" "log field key contains potential sensitive word"
+	logger.Info("message", "test", password) // want "log field key contains potential sensitive word" 
 	slog.Info("Upper first letter!!!") // want "log message should start with lowercase" "log message contains special symbols or emoji"
 	logger.Info("Пароль!!!") // want "log message should start with lowercase" "log message should contain only English letters" "log message contains special symbols or emoji"
 
 	slog.InfoContext(context.Background(), "message", "Field1", "value1") // want "log field key should start with lowercase"
-	slog.InfoContext(context.Background(), "message", slog.String("password", password)) // want "log message contains potential sensitive word"
+	slog.InfoContext(context.Background(), "message", slog.String("password", password)) // want "log field key contains potential sensitive word" "log field key contains potential sensitive word"
+
+	slog.InfoContext(context.Background(), "password validate", "field1", "value1")
 
 	logger.InfoContext(context.Background(), "message", "Field1", "value1") // want "log field key should start with lowercase"
-	logger.InfoContext(context.Background(), "message", slog.String("password", password)) // want "log message contains potential sensitive word"
+	logger.InfoContext(context.Background(), "message", slog.String("password", password)) // want "log field key contains potential sensitive word" "log field key contains potential sensitive word"
+
+	logger.Info("request completed", "field", password) // want "log field key contains potential sensitive word"
+	logger.Info("message", "test", password) // want "log field key contains potential sensitive word"
+	logger.Info("message", "password", net) // want "log field key contains potential sensitive word"
+
 }
