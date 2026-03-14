@@ -5,6 +5,69 @@ import (
 )
 
 
+
+func TestSuggestedFixes(t *testing.T) {
+	tests := []struct {
+        name     string
+        input string
+        wantOutput string
+    }{
+		{
+			name: "empty string",
+			input: "",
+			wantOutput: "",
+		},
+		{
+			name: "correct string",
+			input: "correct string only english",
+			wantOutput: "correct string only english",
+		},
+		{
+			name: "upper first lett",
+			input: "First",
+			wantOutput: "first",
+		},
+		{
+			name: "special symbols",
+			input: "test!!!",
+			wantOutput: "test",
+		},
+		{
+			name: "correct upper letters",
+			input: "HTTP",
+			wantOutput: "HTTP",
+		},
+				{
+			name: "upper",
+			input: "TsdEfEfeFEfE",
+			wantOutput: "tsdEfEfeFEfE",
+		},
+		{
+			name: "correct string",
+			input: "HTTPServer",
+			wantOutput: "HTTPServer",
+		},
+		{
+			name: "correct string and spec symbols",
+			input: "HTTPServer started!!!",
+			wantOutput: "HTTPServer started",
+		},
+		{	
+			name: "correct string and spec symbols",
+			input: "HTTPStatus",
+			wantOutput: "HTTPStatus",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name , func(t *testing.T) {
+			res := toLowerCase(toStandardSymbols(tt.input))
+			if res != tt.wantOutput {
+				t.Errorf("got: %v; want: %v", res, tt.wantOutput)
+			}
+		})
+	}
+}
 func TestIsEnglish(t *testing.T) {
 	tests := []struct {
         name     string

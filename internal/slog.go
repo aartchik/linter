@@ -88,7 +88,31 @@ func checkMessage(pass *analysis.Pass, msgArg ast.Expr) {
 }
 
 func checkSlogKey(pass *analysis.Pass, arg ast.Expr) {
-	strs := collectStrings(arg)
+	switch v := arg.(type) {
+	case *ast.BasicLit:
+		if v.Kind != token.STRING {
+			return
+		}
+		checkKeyString(pass, v, v)
+
+	case *ast.CallExpr:
+		if len(v.Args) == 0 {
+			return
+		}
+
+		keyArg := v.Args[0]
+
+		lit, ok := keyArg.(*ast.BasicLit)
+		if !ok || lit.Kind != token.STRING {
+			return
+		}
+
+		checkKeyString(pass, keyArg, lit)
+	}
+}
+
+func checkKeyString(pass *analysis.Pass, reportNode ast.Expr, strExpr ast.Expr) {
+	strs := collectStrings(strExpr)
 	if len(strs) == 0 {
 		return
 	}
@@ -98,15 +122,15 @@ func checkSlogKey(pass *analysis.Pass, arg ast.Expr) {
 	if !checkLowerCase(key) {
 		newKey := toLowerCase(key)
 		pass.Report(analysis.Diagnostic{
-			Pos:     arg.Pos(),
-			End:     arg.End(),
+			Pos:     reportNode.Pos(),
+			End:     reportNode.End(),
 			Message: "log field key should start with lowercase",
 			SuggestedFixes: []analysis.SuggestedFix{
 				{
 					TextEdits: []analysis.TextEdit{
 						{
-							Pos:     arg.Pos(),
-							End:     arg.End(),
+							Pos:     strExpr.Pos(),
+							End:     strExpr.End(),
 							NewText: []byte(strconv.Quote(newKey)),
 						},
 					},
@@ -116,21 +140,21 @@ func checkSlogKey(pass *analysis.Pass, arg ast.Expr) {
 	}
 
 	if !isEnglish(key) {
-		pass.Reportf(arg.Pos(), "log field key should contain only English letters")
+		pass.Reportf(reportNode.Pos(), "log field key should contain only English letters")
 	}
 
 	if !notHasSpecialSymbols(key) {
 		newKey := toStandardSymbols(key)
 		pass.Report(analysis.Diagnostic{
-			Pos:     arg.Pos(),
-			End:     arg.End(),
+			Pos:     reportNode.Pos(),
+			End:     reportNode.End(),
 			Message: "log field key contains special symbols or emoji",
 			SuggestedFixes: []analysis.SuggestedFix{
 				{
 					TextEdits: []analysis.TextEdit{
 						{
-							Pos:     arg.Pos(),
-							End:     arg.End(),
+							Pos:     strExpr.Pos(),
+							End:     strExpr.End(),
 							NewText: []byte(strconv.Quote(newKey)),
 						},
 					},

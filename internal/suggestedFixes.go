@@ -5,11 +5,18 @@ import (
 	"unicode"
 )
 
-func toLowerCase(s string) (string) {
-	if len(s) == 0 {
+func toLowerCase(s string) string {
+	if s == "" {
 		return ""
 	}
-	return strings.Replace(s, string(s[0]), strings.ToLower(string(s[0])), 1)
+	if len(s) >=2 && unicode.IsUpper(rune(s[0])) && unicode.IsUpper(rune(s[1])) {
+		return s
+	}
+
+	r := []rune(s)
+	r[0] = unicode.ToLower(r[0])
+	
+	return string(r)
 }
 
 func toStandardSymbols(s string) string {
@@ -23,5 +30,5 @@ func toStandardSymbols(s string) string {
 		}
 	}
 
-	return strings.TrimSpace(b.String())
+	return strings.Join(strings.Fields(b.String()), " ")
 }

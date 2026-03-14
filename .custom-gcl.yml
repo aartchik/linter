@@ -1,0 +1,8 @@
+version: v2.11.3
+name: custom-golangci-lint
+destination: .
+
+plugins:
+  - module: aartchik.mylinter
+    path: .
+    import: aartchik.mylinter/plugin

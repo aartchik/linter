@@ -1,0 +1,12 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - mylinter
+
+  settings:
+    custom:
+      mylinter:
+        type: module
+        description: Checks slog and zap logging rules
