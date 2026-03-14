@@ -54,7 +54,7 @@ func main() {
 	slog.Info("message", "password", password) // want "log message contains potential sensitive word"
 	slog.Info("message", "api_key", api_key) // want "log message contains potential sensitive word"
 
-	logger.Info("message", "password", slog.String("password", password)) // want "log message contains potential sensitive word"
+	logger.Info("message", slog.String("password", password)) // want "log message contains potential sensitive word"
 
 	slog.Info("Upper first letter!!!") // want "log message should start with lowercase" "log message contains special symbols or emoji"
 	logger.Info("Пароль!!!") // want "log message should start with lowercase" "log message should contain only English letters" "log message contains special symbols or emoji"

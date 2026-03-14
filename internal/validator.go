@@ -100,6 +100,15 @@ func isSupportedMethodSlog(method string) bool {
 	}
 }
 
+func isSupportedMethodZap(method string) bool {
+	switch method {
+	case "Debug", "Info", "Warn", "Error", "DebugContext", "InfoContext", "WarnContext", "ErrorContext":
+		return true
+	default:
+		return false
+	}
+}
+
 func checkLowerCase(arg string) bool {
 	arg = strings.TrimSpace(arg)
 	r := []rune(arg)

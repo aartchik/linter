@@ -16,6 +16,7 @@ func linterSLOG(pass *analysis.Pass, log *LogCall) {
 
 	msgArg := log.Call.Args[log.MsgIndex]
 	msgParts := collectStrings(msgArg)
+
 	if !checkLowerCase(msgParts[0]) {
 		newmsg := toLowerCase(msgParts[0])
 		pass.Report(analysis.Diagnostic {
@@ -38,7 +39,6 @@ func linterSLOG(pass *analysis.Pass, log *LogCall) {
 	
 
 	for _, part := range msgParts {
-
 		if !isEnglish(part) {
 			pass.Reportf(msgArg.Pos(), "log message should contain only English letters")
 		}

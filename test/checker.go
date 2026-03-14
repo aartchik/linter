@@ -7,5 +7,6 @@ import (
 
 
 func main() {
-	zap.L().Info("message", zap.Bool("string", true))
+	zap.L().Info("Message")
+	
 }
