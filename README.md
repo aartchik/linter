@@ -15,17 +15,20 @@
 
 ```bash
 golangci-lint custom
+```
 
 Запустить линтер:
-
+```bash
 ./custom-golangci-lint run ./...
-
-Автоматическое исправление
+```
 
 Линтер поддерживает автоматическое исправление некоторых ошибок:
 
+```bash
 ./custom-golangci-lint run --fix ./...
-
+```
 Тесты
+```bash
 
 go test ./...
+```
