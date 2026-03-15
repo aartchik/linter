@@ -6,7 +6,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Intsall deps
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+      - name: Install deps
         run: go mod tidy
-      -name: test
-       run: go run test ./...
+      - name: Run tests
+        run: go test ./...
