@@ -22,5 +22,5 @@ func TestAnalyzerDirtyZap(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer, "dirty_zap")
 }
 func TestFix(t *testing.T) {
-	analysistest.RunWithSuggestedFixes( t, analysistest.TestData(), Analyzer, "runWithSuggestedFixes")
+	analysistest.RunWithSuggestedFixes( t, analysistest.TestData(), Analyzer, "run_with_suggested_fixes")
 }
