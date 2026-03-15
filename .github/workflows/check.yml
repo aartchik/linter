@@ -1,5 +1,5 @@
 name: Check
-on: push
+on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -16,3 +16,5 @@ jobs:
         run: go build ./...
       - name: Run tests
         run: go test ./...
+      - name: Run linter
+        run: ./custom-golangci-lint run ./...
