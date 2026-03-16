@@ -18,7 +18,7 @@ func linterZAP(pass *analysis.Pass, log *LogCall) {
 		offset := i - (log.MsgIndex + 1)
 
 		if offset%2 == 0 {
-			checkSlogKey(pass, arg)
+			checkKey(pass, arg)
 		}
 	}
 

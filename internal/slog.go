@@ -21,7 +21,7 @@ func linterSLOG(pass *analysis.Pass, log *LogCall) {
 		offset := i - (log.MsgIndex + 1)
 
 		if offset%2 == 0 {
-			checkSlogKey(pass, arg)
+			checkKey(pass, arg)
 		}
 	}
 
@@ -87,7 +87,7 @@ func checkMessage(pass *analysis.Pass, msgArg ast.Expr) {
 	}
 }
 
-func checkSlogKey(pass *analysis.Pass, arg ast.Expr) {
+func checkKey(pass *analysis.Pass, arg ast.Expr) {
 	switch v := arg.(type) {
 	case *ast.BasicLit:
 		if v.Kind != token.STRING {
