@@ -5,19 +5,6 @@ import (
 	"unicode"
 )
 
-var sensitiveWordsInKey = map[string]struct{}{
-	"password": {},
-	"passwd": {},
-	"pwd": {},
-	"token": {},
-	"secret": {},
-	"apikey": {},
-	"api_key": {},
-	"access_token": {},
-	"refresh_token": {},
-	"authorization": {},
-}
-
 var sensitiveWordsInMSG = map[string]struct{}{
 	"password:": {},
 	"password=": {},
@@ -51,9 +38,12 @@ func normalizeWords(s string) []string {
 }
 
 func isSensitiveKey(s string) bool {
-	if _, ok := sensitiveWordsInKey[s]; ok {
-			return true
-		}
+	if len(SensitivePatterns) == 0 {
+		return false
+	}
+	if _, ok := SensitivePatterns[s]; ok {
+		return true
+	}
 	return false
 }
 

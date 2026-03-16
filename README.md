@@ -71,3 +71,20 @@ go test ./...
 ```bash
 /path/to/custom-golangci-lint run ./...
 ```
+
+## Запуск с кастомными паттернами чувствительных слов
+
+Можно передать в качестве флага путь до .yml файла
+
+```bash
+./bin/linter -config .mylinter_sensitive.yml  ./test/checker.go
+```
+
+Стандартное значение пути до файла ".mylinter_sensitive.yml" имеет содержимое
+```bash
+sensitive_patterns:
+  - password
+  - token
+```
+
+

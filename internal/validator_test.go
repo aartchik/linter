@@ -219,6 +219,7 @@ func TestLowerCase(t *testing.T) {
 }
 
 func TestContainsSesnitiveWord(t *testing.T) {
+	SensitivePatterns = DefaultSensitiveWordsInKey
 	tests := []struct {
         name     string
         input string
