@@ -9,7 +9,7 @@ import (
 
 
 func main() {
-	configPath := flag.String("config", ".mylinter_sensitive.yml", "path to config file")
+	configPath := flag.String("config", ".mylinter_sensitive.yml", "path to sensitive words file")
 	flag.Parse()
 
 	internal.LoadConfig(*configPath)
